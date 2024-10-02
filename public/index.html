@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aquagift Donation Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: url('assets/optimized_doation.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+        }
+        
+        .form-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 350px;
+            position: relative;
+        }
+        
+        .form-container h2 {
+            text-align: center;
+            font-size: 1.5em;
+        }
+        /* .form-container input,
+        .form-container label {
+            width: 100%;
+            
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        } */
+        
+        .form-container button {
+            width: 100%;
+            padding: 12px;
+            /* margin: 10px 0; */
+            background-color: black;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        
+        .form-container button:hover {
+            opacity: 0.8;
+        }
+        
+        .thank-you-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 24px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: black;
+        }
+        
+        .close-btn:hover {
+            color: red;
+        }
+        
+        .fieldcss {
+            border: none !important;
+            border-bottom: 1px solid grey !important;
+            border-radius: 0px !important;
+            margin-top: 10% !important;
+            width: 100%;
+        }
+        
+        input:focus {
+            outline: none !important;
+        }
+        /* Responsive design */
+        
+        @media only screen and (max-width:900px) {}
+        
+        @media only screen and (max-width: 768px) {
+            .form-container {
+                width: 90%;
+                max-width: 300px;
+            }
+            .form-container h2 {
+                font-size: 1.2em;
+            }
+            .form-container button,
+            .form-container input {
+                font-size: 0.9em;
+            }
+        }
+        
+        @media only screen and (max-width: 480px) {
+            .body {
+                background-image: url('assets/donation\ wallpaper\ \(1\).png') !important;
+                background-repeat: no-repeat;
+                background-size: cover;
+            }
+            .form-container {
+                width: 95%;
+                max-width: 280px;
+            }
+            .form-container h2 {
+                font-size: 1.1em;
+            }
+            .form-container button,
+            .form-container input {
+                font-size: 0.85em;
+            }
+            .popthank {
+                border: 1px solid grey;
+                width: 50%;
+                margin: 0 auto;
+                background: #fff;
+                color: #000;
+                margin-top: 50%;
+                padding: 15%;
+                border-radius: 30px;
+                overflow-y: hidden;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div class="form-container" id="formContainer">
+
+        <div>
+            <button style="width: 10%; background-color: #fff; color: #000;" class="close-btn" id="closeBtn">&times;</button>
+        </div>
+        <h2>Donation Form</h2>
+
+        <form id="userForm">
+            <input class="fieldcss" type="text" id="name" placeholder="Your Name" required>
+            <input class="fieldcss" type="email" id="email" placeholder="Your Email" required title="Enter a valid email">
+            <input class="fieldcss" type="tel" id="phone" placeholder="Your Phone Number" required pattern="^[0-9]{10}$" title="Enter a valid 10-digit phone number">
+            <input style="margin-top: 10%;" type="checkbox" name="check" id="checkbox1" value="html">
+            <label for="checkbox1">Interested in collab with us</label>
+            <button style="margin-top: 10%;" type="submit">Submit</button>
+        </form>
+    </div>
+
+    <div class="thank-you-popup" id="thankYouPopup">
+        <div class="popthank">
+            <img style="width: 50%;" src="assets/icons8-tick.gif" alt="">
+            <h4> <b> Thank you for your precious donation!</b></h4>
+            <p style="border: 1px solid transparent;
+            background: aliceblue;
+            padding: 5%;">Redirected in <span id="timer">3</span></p>
+
+        </div>
+
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyCzi23cJh4-br54Oermm2IMNoI8NxUCgkk",
+                authDomain: "aquagift-12b1e.firebaseapp.com",
+                projectId: "aquagift-12b1e",
+                storageBucket: "aquagift-12b1e.appspot.com",
+                messagingSenderId: "1060671920775",
+                appId: "1:1060671920775:web:903a4ba37acdd0a13b3622",
+                measurementId: "G-7SV0EK0XVM"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            // Extract code from URL or default to "aquagift"
+            function getQueryParam(param) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param) || 'aquagift'; // Default to 'aquagift'
+            }
+
+            const qrCode = getQueryParam('code');
+
+            // Fetch URL associated with the QR code from Firestore
+            function getQRCodeUrl(qrCode) {
+                const qrCodeMappingsRef = db.collection('qrCodeMappings');
+                qrCodeMappingsRef.doc(qrCode).get().then((doc) => {
+                    if (doc.exists) {
+                        const mappedUrl = doc.data().url;
+                        handleFormSubmission(mappedUrl);
+                    } else {
+                        // Edge case: Default to "aquagift" URL if no QR code found
+                        console.log('QR code not found, redirecting to aquagift URL');
+                        getQRCodeUrl('aquagift');
+                    }
+                }).catch((error) => {
+                    console.error('Error fetching document:', error);
+                });
+            }
+
+            // Get the user's IP address using ipinfo.io
+            function getUserIP(callback) {
+                fetch('https://ipinfo.io?token=19e1e22052fea5') // You can sign up at ipinfo.io to get a free token
+                    .then(response => response.json())
+                    .then(data => {
+                        callback(data.ip);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching IP address:', error);
+                        callback('Unknown IP');
+                    });
+            }
+
+            // Show the thank you popup and then redirect after 3 seconds
+            function showThankYouPopup(mappedUrl) {
+                const popup = document.getElementById('thankYouPopup');
+                const timer = document.getElementById('timer');
+                let countdown = 3;
+
+                popup.style.display = "flex";
+                const interval = setInterval(() => {
+                    countdown--;
+                    timer.textContent = countdown;
+                    if (countdown === 0) {
+                        clearInterval(interval);
+                        window.location.href = mappedUrl; // Redirect to the mapped URL
+                    }
+                }, 1000);
+            }
+
+            // Handle form submission
+            function handleFormSubmission(mappedUrl) {
+                const form = document.getElementById('userForm');
+                const closeButton = document.getElementById('closeBtn');
+
+                form.addEventListener('submit', function(event) {
+
+                    event.preventDefault(); // Prevent default form submission
+
+                    const name = document.getElementById('name').value;
+                    const email = document.getElementById('email').value;
+                    const phone = document.getElementById('phone').value;
+                    const advertise = document.getElementById('checkbox1').checked ? "Yes" : "No"; // Store checkbox data
+
+                    // Email and phone validation using regex
+                    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                    const phoneRegex = /^[0-9]{10}$/;
+
+                    if (!emailRegex.test(email)) {
+                        alert("Please enter a valid email address.");
+                        return;
+                    }
+
+                    if (!phoneRegex.test(phone)) {
+                        console.log("phone error")
+                        alert("Please enter a valid 10-digit phone number.");
+                        return;
+                    }
+
+                    // Get the user's IP address and store along with the data
+                    getUserIP(function(ipAddress) {
+                        db.collection('qrCodes').doc(qrCode).collection('users').add({
+                            name: name,
+                            email: email,
+                            phone: phone,
+                            interestedInAdvertise: advertise, // Store checkbox response
+                            ipAddress: ipAddress, // Store the IP address
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        }).then(() => {
+                            console.log('User data stored successfully');
+                            showThankYouPopup(mappedUrl);
+                        }).catch((error) => {
+                            console.error('Error storing user data:', error);
+                        });
+                    });
+                });
+
+                // Handle skip button or close button functionality
+                closeButton.addEventListener('click', function() {
+                    showThankYouPopup(mappedUrl); // Show thank you popup and redirect
+                });
+            }
+
+            // Fetch the QR code URL and handle form submission
+            getQRCodeUrl(qrCode);
+        });
+    </script>
+</body>
+
+</html>

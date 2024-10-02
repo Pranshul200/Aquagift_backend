@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aquagift Donation Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('https://via.placeholder.com/1200x800');
+            /* Dummy background image */
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .form-container {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .form-container h2 {
+            text-align: center;
+        }
+        
+        .form-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .thank-you-popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 24px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="form-container" id="formContainer">
+        <h2>Donation Form</h2>
+        <form id="userForm">
+            <input type="text" id="name" placeholder="Your Name" required>
+            <input type="email" id="email" placeholder="Your Email" required>
+            <input type="tel" id="phone" placeholder="Your Phone Number" required>
+            <label><input type="checkbox" id="advertise"> Interested in advertising with Aquagift?</label>
+            <button type="submit">Submit</button>
+            <button type="button" id="skipButton">Skip</button>
+        </form>
+    </div>
+
+    <div class="thank-you-popup" id="thankYouPopup">
+        <p>Thank you for your precious donation!</p>
+        <p>You will be redirected shortly... <span id="timer">3</span></p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyCzi23cJh4-br54Oermm2IMNoI8NxUCgkk",
+                authDomain: "aquagift-12b1e.firebaseapp.com",
+                projectId: "aquagift-12b1e",
+                storageBucket: "aquagift-12b1e.appspot.com",
+                messagingSenderId: "1060671920775",
+                appId: "1:1060671920775:web:903a4ba37acdd0a13b3622",
+                measurementId: "G-7SV0EK0XVM"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            // Extract code from URL or default to "code1"
+            function getQueryParam(param) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param) || 'code1'; // Default to 'code1'
+            }
+
+            const qrCode = getQueryParam('code');
+
+            // Fetch URL associated with the QR code from Firestore
+            function getQRCodeUrl(qrCode) {
+                const qrCodeMappingsRef = db.collection('qrCodeMappings');
+                qrCodeMappingsRef.doc(qrCode).get().then((doc) => {
+                    if (doc.exists) {
+                        const mappedUrl = doc.data().url;
+                        handleFormSubmission(mappedUrl);
+                    } else {
+                        // Edge case: Default to "code1" URL if no QR code found
+                        console.log('QR code not found, redirecting to code1 URL');
+                        getQRCodeUrl('code1');
+                    }
+                }).catch((error) => {
+                    console.error('Error fetching document:', error);
+                });
+            }
+
+            // Get the user's IP address using ipinfo.io
+            function getUserIP(callback) {
+                fetch('https://ipinfo.io?token=19e1e22052fea5') // You can sign up at ipinfo.io to get a free token
+                    .then(response => response.json())
+                    .then(data => {
+                        callback(data.ip);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching IP address:', error);
+                        callback('Unknown IP');
+                    });
+            }
+
+            // Show the thank you popup and then redirect after 3 seconds
+            function showThankYouPopup(mappedUrl) {
+                const popup = document.getElementById('thankYouPopup');
+                const timer = document.getElementById('timer');
+                let countdown = 3;
+
+                popup.style.display = "flex";
+                const interval = setInterval(() => {
+                    countdown--;
+                    timer.textContent = countdown;
+                    if (countdown === 0) {
+                        clearInterval(interval);
+                        window.location.href = mappedUrl; // Redirect to the mapped URL
+                    }
+                }, 1000);
+            }
+
+            // Handle form submission or skip button
+            function handleFormSubmission(mappedUrl) {
+                const form = document.getElementById('userForm');
+                const skipButton = document.getElementById('skipButton');
+
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevent default form submission
+
+                    const name = document.getElementById('name').value;
+                    const email = document.getElementById('email').value;
+                    const phone = document.getElementById('phone').value;
+
+                    // Get the user's IP address and store along with the data
+                    getUserIP(function(ipAddress) {
+                        db.collection('qrCodes').doc(qrCode).collection('users').add({
+                            name: name,
+                            email: email,
+                            phone: phone,
+                            ipAddress: ipAddress, // Store the IP address
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        }).then(() => {
+                            console.log('User data stored successfully');
+                            showThankYouPopup(mappedUrl);
+                        }).catch((error) => {
+                            console.error('Error storing user data:', error);
+                        });
+                    });
+                });
+
+                // Skip button functionality
+                skipButton.addEventListener('click', function() {
+                    showThankYouPopup(mappedUrl);
+                });
+            }
+
+            // Start the flow by fetching the QR code URL
+            getQRCodeUrl(qrCode);
+        });
+    </script>
+</body>
+
+</html>
